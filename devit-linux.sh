@@ -84,7 +84,7 @@ log_success "Loyiha katalogi huquqlari www-data foydalanuvchisiga berildi."
 
 # 7. www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda
 echo "www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda..."
-sudo -u www-data composer install --no-interaction --optimize-autoloader || log_error "Composer install amalga oshirilmadi."
+sudo -u www-data composer install || log_error "Composer install amalga oshirilmadi."
 log_success "Composer bog'liqliklari o'rnatildi."
 
 # 8. Composer fund (moliyaviy yordam haqida ma'lumot)
