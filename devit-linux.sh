@@ -25,6 +25,14 @@ log_warning() {
 # Tekshiruv va jarayon boshlanishi
 echo -e "${GREEN}Yii2 dasturini sozlash jarayoni boshlanmoqda...${NC}"
 
+# WSL muhitini tekshirish
+if grep -qEi "(Microsoft|WSL)" /proc/version; then
+    log_warning "WSL muhiti aniqlandi. Fayl tizimi ruxsatlari bilan ehtiyot bo'ling."
+    WSL_ENV=1
+else
+    WSL_ENV=0
+fi
+
 # 1. Paketlar bazasini yangilash
 echo "Paketlar ro'yxati yangilanmoqda..."
 sudo apt-get update -y || log_error "Paketlar ro'yxatini yangilash amalga oshmadi."
@@ -78,13 +86,14 @@ fi
 # 6. Loyiha katalogining huquqlarini www-data ga berish
 echo "Loyiha katalogi huquqlari yangilanmoqda..."
 sudo chown -R www-data:www-data "$(pwd)" || log_error "Fayl egasi o'zgartirishda xato yuz berdi."
-sudo find "$(pwd)" -type d -exec chmod 755 {} \; || log_error "Kataloglar uchun ruxsat o'rnatishda xato."
-sudo find "$(pwd)" -type f -exec chmod 644 {} \; || log_error "Fayllar uchun ruxsat o'rnatishda xato."
+sudo find "$(pwd)" -type d -exec chmod 775 {} \; || log_error "Kataloglar uchun ruxsat o'rnatishda xato."
+sudo find "$(pwd)" -type f -exec chmod 664 {} \; || log_error "Fayllar uchun ruxsat o'rnatishda xato."
+sudo chmod 664 composer.json composer.lock || log_error "composer.json va composer.lock ruxsatlarini o'rnatishda xato."
 log_success "Loyiha katalogi huquqlari www-data foydalanuvchisiga berildi."
 
 # 7. www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda
 echo "www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda..."
-sudo -u www-data composer install || log_error "Composer install amalga oshirilmadi."
+sudo -u www-data composer install --no-interaction --optimize-autoloader || log_error "Composer install amalga oshirilmadi."
 log_success "Composer bog'liqliklari o'rnatildi."
 
 # 8. Composer fund (moliyaviy yordam haqida ma'lumot)
@@ -98,7 +107,7 @@ sudo mkdir -p backend/runtime backend/web/assets console/runtime frontend/runtim
 sudo touch yii yii_test yii_test.bat || log_error "Fayllarni yaratish amalga oshmadi."
 sudo chown -R www-data:www-data backend console frontend yii yii_test yii_test.bat || log_error "Katalog va fayl egaligini o'rnatish amalga oshmadi."
 sudo chmod -R 775 backend console frontend yii yii_test yii_test.bat || log_error "Katalog va fayl ruxsatlarini o'rnatish amalga oshmadi."
-sudo chmod -R 775 /var/www/html || log_error "Loyiha katalogi ruxsatlarini o'rnatish amalga oshmadi."
+sudo chmod -R 775 "$(pwd)" || log_error "Loyiha katalogi ruxsatlarini o'rnatish amalga oshmadi."
 log_success "Kataloglar va fayllar yaratildi, ruxsatlar o'rnatildi."
 
 # 10. Yii2 dasturini ishga tushirish (Production muhiti)
@@ -106,7 +115,7 @@ echo "Yii2 dasturi Production muhiti uchun sozlanmoqda..."
 sudo -u www-data php init --env=Production --overwrite=All --no-interaction || log_error "Yii2 dasturini sozlash amalga oshmadi."
 
 # 11. common/config/main-local.php faylini PostgreSQL sozlamalari bilan yangilash
-echo "Ma'lumotlar bazasi sozlamalarini PostgreSQL uchun yangilamoqda..."
+echo "Ma'lumotlar bazasi sozlamalarini MySQL uchun yangilamoqda..."
 CONFIG_FILE="common/config/main-local.php"
 if [ -f "$CONFIG_FILE" ]; then
     sudo -u www-data bash -c "cat > $CONFIG_FILE" << 'EOL'
