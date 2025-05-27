@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: ${DOCKER_CONTAINER_NAME}_app
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    networks:
+      - devituz
+    environment:
+      APP_ENV: local
+      WWWUSER: '${WWWUSER:-1000}'
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+      XDEBUG_CONFIG: '${XDEBUG_CONFIG:-client_host=host.docker.internal}'
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: '${DB_DATABASE}'
+      DB_USERNAME: '${DB_USERNAME}'
+      DB_PASSWORD: '${DB_PASSWORD}'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.2
+    container_name: ${DOCKER_CONTAINER_NAME}_phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      # PMA_USER: ${DB_USERNAME}
+      # PMA_PASSWORD: ${DB_PASSWORD}
+      PMA_PORT: 3306
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - devituz
+    restart: unless-stopped
+
+
+  nginx:
+    image: nginx:alpine
+    container_name: ${DOCKER_CONTAINER_NAME}_nginx
+    ports:
+      - '${APP_PORT:-8010}:80'
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - devituz
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.2
+    container_name: ${DOCKER_CONTAINER_NAME}_mysql
+    ports:
+      - '${FORWARD_DB_PORT:-3306}:3306'
+    environment:
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - devituz
+    restart: unless-stopped
+
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: '${WWWGROUP:-1000}'
+    container_name: ${DOCKER_CONTAINER_NAME}_migration
+    command: bash -c "php yii migrate --interactive=0"
+    depends_on:
+      - app
+      - mysql
+    networks:
+      - devituz
+    environment:
+      APP_ENV: local
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: '${DB_DATABASE}'
+      DB_USERNAME: '${DB_USERNAME}'
+      DB_PASSWORD: '${DB_PASSWORD}'
+    volumes:
+      - .:/var/www/html
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  devituz:
+    driver: bridge
