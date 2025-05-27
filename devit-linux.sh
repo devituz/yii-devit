@@ -75,17 +75,24 @@ else
     log_success "Composer allaqachon o'rnatilgan."
 fi
 
-# 6. Composer install
+# 6. Loyiha katalogining huquqlarini www-data ga berish
+echo "Loyiha katalogi huquqlari yangilanmoqda..."
+sudo chown -R www-data:www-data "$(pwd)" || log_error "Fayl egasi o'zgartirishda xato yuz berdi."
+sudo find "$(pwd)" -type d -exec chmod 755 {} \; || log_error "Kataloglar uchun ruxsat o'rnatishda xato."
+sudo find "$(pwd)" -type f -exec chmod 644 {} \; || log_error "Fayllar uchun ruxsat o'rnatishda xato."
+log_success "Loyiha katalogi huquqlari www-data foydalanuvchisiga berildi."
+
+# 7. www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda
 echo "www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda..."
 sudo -u www-data composer install --no-interaction --optimize-autoloader || log_error "Composer install amalga oshirilmadi."
 log_success "Composer bog'liqliklari o'rnatildi."
 
-# 7. Composer fund (moliyaviy yordam haqida ma'lumot)
+# 8. Composer fund (moliyaviy yordam haqida ma'lumot)
 echo "Composer loyihasi uchun moliyaviy yordam ma'lumotlari..."
 sudo -u www-data composer fund || log_warning "Composer fund ma'lumotlarini olish amalga oshmadi."
 log_success "Composer fund ma'lumotlari ko'rsatildi."
 
-# 8. Loyiha katalogidagi barcha kerakli kataloglar va fayllarni yaratish va ruxsatlarni o'rnatish
+# 9. Kerakli kataloglar va fayllar uchun ruxsatlar o'rnatish
 echo "Kerakli kataloglar va fayllar uchun ruxsatlar o'rnatilmoqda..."
 sudo mkdir -p backend/runtime backend/web/assets console/runtime frontend/runtime frontend/web/assets || log_error "Kataloglarni yaratish amalga oshmadi."
 sudo touch yii yii_test yii_test.bat || log_error "Fayllarni yaratish amalga oshmadi."
@@ -94,11 +101,11 @@ sudo chmod -R 775 backend console frontend yii yii_test yii_test.bat || log_erro
 sudo chmod -R 775 /var/www/html || log_error "Loyiha katalogi ruxsatlarini o'rnatish amalga oshmadi."
 log_success "Kataloglar va fayllar yaratildi, ruxsatlar o'rnatildi."
 
-# 9. Yii2 dasturini ishga tushirish (Production muhiti)
+# 10. Yii2 dasturini ishga tushirish (Production muhiti)
 echo "Yii2 dasturi Production muhiti uchun sozlanmoqda..."
 sudo -u www-data php init --env=Production --overwrite=All --no-interaction || log_error "Yii2 dasturini sozlash amalga oshmadi."
 
-# 10. common/config/main-local.php faylini PostgreSQL sozlamalari bilan yangilash
+# 11. common/config/main-local.php faylini PostgreSQL sozlamalari bilan yangilash
 echo "Ma'lumotlar bazasi sozlamalarini PostgreSQL uchun yangilamoqda..."
 CONFIG_FILE="common/config/main-local.php"
 if [ -f "$CONFIG_FILE" ]; then
@@ -128,15 +135,12 @@ fi
 
 log_success "Yii2 dasturi sozlandi."
 
-
-
-
-# 11. Docker konteynerlarini ishga tushirish
+# 12. Docker konteynerlarini ishga tushirish
 echo "Docker konteynerlari ishga tushirilmoqda..."
 docker-compose up -d --build --force-recreate || log_error "Docker konteynerlarini ishga tushirish amalga oshmadi."
 log_success "Docker konteynerlari ishga tushirildi."
 
-# 12. Yakuniy xabar
+# 13. Yakuniy xabar
 echo ""
 echo -e "${GREEN}✅ Dastur endi ishlamoqda!${NC}"
 echo -e "${GREEN}🌐 Tashrif buyuring: http://127.0.0.1:8010${NC}"
