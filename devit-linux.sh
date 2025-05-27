@@ -22,48 +22,12 @@ log_warning() {
     echo -e "${YELLOW}OGOHLANTIRISH: $1${NC}"
 }
 
-# apt lock tekshirish uchun funksiya (Ubuntu, Debian va apt asosli uchun)
-wait_for_apt_lock() {
-    local retries=30
-    local count=0
-    while sudo fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
-        echo "apt lock mavjud, kutilyapti... (${count}/${retries})"
-        sleep 1
-        count=$((count+1))
-        if [ $count -ge $retries ]; then
-            echo "apt lock hali ham mavjud, skript to'xtatildi."
-            exit 1
-        fi
-    done
-}
-
+# Tekshiruv va jarayon boshlanishi
 echo -e "${GREEN}Yii2 dasturini sozlash jarayoni boshlanmoqda...${NC}"
 
-# 1. Paketlar bazasini yangilash distributivga qarab
-if command -v apt-get >/dev/null 2>&1; then
-    echo "apt-get asosidagi distributiv aniqlandi."
-    echo "Paketlar ro'yxati yangilanmoqda..."
-    wait_for_apt_lock
-    sudo apt-get update -y || log_error "Paketlar ro'yxatini yangilash amalga oshmadi."
-
-elif command -v yum >/dev/null 2>&1; then
-    echo "yum asosidagi distributiv aniqlandi."
-    echo "yum update ishga tushirilmoqda..."
-    sudo yum update -y || log_error "yum update amalga oshmadi."
-
-elif command -v dnf >/dev/null 2>&1; then
-    echo "dnf asosidagi distributiv aniqlandi."
-    echo "dnf update ishga tushirilmoqda..."
-    sudo dnf update -y || log_error "dnf update amalga oshmadi."
-
-elif command -v pacman >/dev/null 2>&1; then
-    echo "pacman asosidagi distributiv aniqlandi."
-    echo "pacman update ishga tushirilmoqda..."
-    sudo pacman -Syu --noconfirm || log_error "pacman update amalga oshmadi."
-
-else
-    log_warning "Paket boshqaruv tizimi topilmadi. Paketlarni yangilash o'tkazib yuborildi."
-fi
+# 1. Paketlar bazasini yangilash
+echo "Paketlar ro'yxati yangilanmoqda..."
+sudo apt-get update -y || log_error "Paketlar ro'yxatini yangilash amalga oshmadi."
 
 # 2. Docker tekshiruvi
 echo "Docker o'rnatilganligi tekshirilmoqda..."
@@ -97,12 +61,12 @@ if ! command -v composer &> /dev/null; then
     EXPECTED_SIGNATURE=$(wget -qO - https://composer.github.io/installer.sig) || log_error "Composer imzosini olish amalga oshmadi."
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" || log_error "Composer o'rnatuvchisini yuklab olish amalga oshmadi."
     ACTUAL_SIGNATURE=$(php -r "echo hash_file('sha384', 'composer-setup.php');")
-
+    
     if [ "$EXPECTED_SIGNATURE" != "$ACTUAL_SIGNATURE" ]; then
         rm composer-setup.php
         log_error "Composer o'rnatuvchisi imzosida xato."
     fi
-
+    
     php composer-setup.php --version=2.8.8 || log_error "Composer o'rnatish amalga oshmadi."
     sudo mv composer.phar /usr/local/bin/composer || log_error "Composer-ni /usr/local/bin ga ko'chirish amalga oshmadi."
     rm composer-setup.php
@@ -161,6 +125,11 @@ EOL
 else
     log_error "$CONFIG_FILE fayli topilmadi."
 fi
+
+log_success "Yii2 dasturi sozlandi."
+
+
+
 
 # 11. Docker konteynerlarini ishga tushirish
 echo "Docker konteynerlari ishga tushirilmoqda..."
