@@ -91,10 +91,10 @@ sudo find "$(pwd)" -type f -exec chmod 664 {} \; || log_error "Fayllar uchun rux
 sudo chmod 664 composer.json composer.lock || log_error "composer.json va composer.lock ruxsatlarini o'rnatishda xato."
 log_success "Loyiha katalogi huquqlari www-data foydalanuvchisiga berildi."
 
-# 7. www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda
-echo "www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda..."
-sudo -u www-data composer install --no-interaction --optimize-autoloader || log_error "Composer install amalga oshirilmadi."
-log_success "Composer bog'liqliklari o'rnatildi."
+# # 7. www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda
+# echo "www-data foydalanuvchisi sifatida composer install ishga tushirilmoqda..."
+# sudo -u www-data composer install --no-interaction --optimize-autoloader || log_error "Composer install amalga oshirilmadi."
+# log_success "Composer bog'liqliklari o'rnatildi."
 
 # 8. Composer fund (moliyaviy yordam haqida ma'lumot)
 echo "Composer loyihasi uchun moliyaviy yordam ma'lumotlari..."
